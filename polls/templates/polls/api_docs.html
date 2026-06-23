@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <title>API Documentation - Advanced Media Downloader</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+        @page {
+            size: A4;
+            margin: 15mm 12mm;
+            background-color: #ffffff;
+        }
+        
+        .header-banner {
+            background-color: #1a202c;
+            color: #ffffff;
+            padding: 25px 20px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        .header-banner h1 {
+            margin: 0;
+            font-size: 20pt;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header-banner p {
+            margin: 8px 0 0 0;
+            font-size: 11pt;
+            color: #a0aec0;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #2d3748;
+            border-left: 4px solid #3182ce;
+            padding-left: 10px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 12pt;
+            color: #4a5568;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a5568;
+        }
+
+        .endpoint-badge {
+            display: inline-block;
+            background-color: #e2e8f0;
+            color: #2d3748;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 10pt;
+            margin-bottom: 15px;
+        }
+        .method-post {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+        .method-get {
+            background-color: #bee3f8;
+            color: #2a4365;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 10pt;
+        }
+        th {
+            background-color: #f7fafc;
+            color: #2d3748;
+            font-weight: bold;
+        }
+        tr:nth-child(even) td {
+            background-color: #fcfcfc;
+        }
+
+        pre {
+            background-color: #1a202c;
+            color: #edf2f7;
+            padding: 12px;
+            border-radius: 5px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 9.5pt;
+            overflow: hidden;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            page-break-inside: avoid;
+        }
+
+        .info-box {
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            color: #2b6cb0;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+            page-break-inside: avoid;
+        }
+        .info-box p {
+            margin: 0;
+            color: #2b6cb0;
+        }
+        
+        .math {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-banner">
+        <h1>Advanced Media Downloader API Documentation</h1>
+        <p>Hati rasmi ya ushirikiano wa mifumo ya kupakua video na audio (Asynchronous Background Task Queue)</p>
+    </div>
+
+    <p>Hati hii inatoa maelekezo ya kina ya jinsi ya kuingiliana na API yetu ya kisasa ya kupakua maudhui kutoka mitandao ya kijamii kama YouTube na Facebook. API hii inafanya kazi chini ya mfumo wa sekunde sifuri (Asynchronous) kupitia Celery na Redis.</p>
+
+    <h2>🔒 Uthibitisho (Authentication)</h2>
+    <p>Maombi yote ya API lazima yaambatane na ufunguo wa ulinzi wa <code>X-API-Key</code> uliowekwa kwenye HTTP Header ya kila request. Kushindwa kuweka ufunguo huu kutasababisha server kutema kosa la <code>401 Unauthorized</code>.</p>
+    
+    <pre>X-API-Key: e7CG7bz3.0INIHuWSxrbhO4LSvQUMvM2dQIjA0b34
+Content-Type: application/json</pre>
+
+    <h2>📥 1. Omba Kupakua Maudhui (Request Media Download)</h2>
+    <div class="endpoint-badge method-post">POST /api/v1/download/</div>
+    <p>Endpoint hii inapokea link ya video, inasajili kazi chini kwa chini kwenye mfumo wa Celery Worker, na inakurudishia majibu ya papo hapo bila kukusubirisha download imalizike.</p>
+
+    <h3>Vigezo Vinavyotakiwa (JSON Payload Parameters)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Kigezo (Field)</th>
+                <th>Aina (Type)</th>
+                <th>Lazima?</th>
+                <th>Maelezo (Description)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>link</code></td>
+                <td>String</td>
+                <td>Ndiyo</td>
+                <td>URL halisi ya video kutoka YouTube au Facebook.</td>
+            </tr>
+            <tr>
+                <td><code>format_type</code></td>
+                <td>String</td>
+                <td>Ndiyo</td>
+                <td>Aina ya faili unalotaka: <code>video</code> au <code>audio</code>.</td>
+            </tr>
+            <tr>
+                <td><code>quality</code></td>
+                <td>String</td>
+                <td>Ndiyo</td>
+                <td>Ubora wa picha: <code>1080p</code>, <code>720p</code>, <code>360p</code> au <code>best</code> kwa audio.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Mfano wa Bando la Request (JSON Input)</h3>
+    <pre>{
+    "link": "https://www.facebook.com/share/v/1E62QanCsZ/",
+    "format_type": "video",
+    "quality": "720p"
+}</pre>
+
+    <h3>Mfano wa Amri ya cURL (cURL Snippet)</h3>
+    <pre>curl -X POST http://127.0.0.1:8000/api/v1/download/      -H "X-API-Key: YOUR_API_KEY_HERE"      -H "Content-Type: application/json"      -d '{
+           "link": "https://www.facebook.com/share/v/1E62QanCsZ/",
+           "format_type": "video",
+           "quality": "720p"
+         }'</pre>
+
+    <h3>Majibu ya Kazi Ikisajiliwa vizuri (201 Created Response)</h3>
+    <pre>{
+    "id": 52,
+    "link": "https://www.facebook.com/share/v/1E62QanCsZ/",
+    "format_type": "video",
+    "quality": "720p",
+    "status": "Pending",
+    "name": null,
+    "error_message": null
+}</pre>
+
+    <h2>📊 2. Kagua Hali ya Download (Check Download Status)</h2>
+    <div class="endpoint-badge method-get">GET /api/v1/download/status/&lt;int:id&gt;/</div>
+    <p>Kwa sababu kazi inafanyika asynchronous kule nyuma, mfumo wako wa Frontend unatakiwa uwe unapiga kwenye endpoint hii (Polling) kila baada ya sekunde <span class="math">t = 3</span> kukagua kama faili limekamilika.</p>
+
+    <h3>Mfano wa Amri ya cURL ya Kukagua Status</h3>
+    <pre>curl -X GET http://127.0.0.1:8000/api/v1/download/status/52/      -H "X-API-Key: YOUR_API_KEY_HERE"</pre>
+
+    <h3>Majibu ya Server Kama Kazi Imefanikiwa (Success Response)</h3>
+    <pre>{
+    "id": 52,
+    "status": "Success",
+    "name": "Vinicius_Jr_Celebration_52.mp4",
+    "download_url": "http://127.0.0.1:8000/media/downloads/Vinicius_Jr_Celebration_52.mp4",
+    "error_message": null
+}</pre>
+
+    <h3>Majibu ya Server Kama Kazi Imefeli (Failed Response)</h3>
+    <pre>{
+    "id": 52,
+    "status": "Failed",
+    "name": null,
+    "download_url": null,
+    "error_message": "Unsupported URL: Video hii ni ya faragha (Private) au imefutwa."
+}</pre>
+
+    <div class="info-box">
+        <p><strong>⚠️ ILANI YA USALAMA WA STORAGE:</strong> Faili linalopatikana kwenye <code>download_url</code> litadumu kwenye storage kwa muda wa <strong>dakika 1 (sekunde 60)</strong> pekee kabla ya kufutwa kiotomatiki na Celery Beat Task ili kulinda diski ya server yako isijae.</p>
+    </div>
+
+</body>
+</html>
