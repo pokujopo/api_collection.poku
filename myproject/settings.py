@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-(#exonetfinu6g2k5jhlmk0+*odf(*-)wmugr$e41lcy-pgm$w
 DEBUG = True
 
 #ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['.render.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [ 'https://api-collection-poku.onrender.com/','.render.com', '127.0.0.1', 'localhost']
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
