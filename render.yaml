@@ -10,11 +10,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: celery-redis
-          property: connectionString
 
   # 2. MTAMBO WA CELERY WORKER (Downloads & FFmpeg)
   - type: worker
@@ -27,13 +22,4 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: celery-redis
-          property: connectionString
-
-# ── HAPA NDIPO PALIPOKUWA NA ERROR. MUUNDO SAHIHI WA REDIS NI HUU:
-redis:
-  name: celery-redis
-  plan: free # Mpango wa bure kabisa usio na gharama (Free Tier)
+        
