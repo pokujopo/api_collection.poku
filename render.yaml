@@ -1,0 +1,43 @@
+services:
+  # 1. MTAMBO WA WEB (Django API)
+  - type: web
+    name: media-downloader-api
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate
+    # Hapa tunamwambia Gunicorn abebe WSGI ya mradi wako live
+    startCommand: gunicorn myproject.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: celery-redis
+          property: connectionString
+
+  # 2. MTAMBO WA CELERY WORKER (Downloads & FFmpeg)
+  - type: worker
+    name: celery-worker
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      # Amri maalum ya kusakinisha FFmpeg ndani ya Linux ya Render kiotomatiki
+      apt-get update && apt-get install -y ffmpeg
+    startCommand: celery -A myproject worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: celery-redis
+          property: connectionString
+
+# 3. ENGINE YA REDIS (Message Broker ya Bure)
+databases:
+  - redis:
+      name: celery-redis
+      plan: free # Mpango wa bure kabisa usio na gharama
+      
