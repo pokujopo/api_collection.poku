@@ -95,15 +95,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # Celery Configuration
-#CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
-#CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
-import os
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
+#import os
 
 # Kama tupo live Render itasoma REDIS_URL ya mtandao, la sivyo itatumia localhost
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+#REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
 
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+#CELERY_BROKER_URL = REDIS_URL
+#CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 # Mstari huu unaiambia Django ikutekeleza task ya Celery hapo hapo (Synchronously) 
