@@ -77,7 +77,7 @@ import os
 # Kama upo Render, itasoma kamba ya Supabase. Kama ipo local na haujaweka, itatumia SQLite ya majaribio
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite3'),
+        default=os.environ.get('DATABASE_URL'),
         conn_max_age=600
     )
 }
