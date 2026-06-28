@@ -33,17 +33,23 @@ urlpatterns = [
 
 from django.contrib import admin
 from django.urls import path
-from polls.views import CustomLoginView, GenerateAPIKeyView, VideoDownloadAPIView,DownloadStatusAPIView,APIDocumentationView
+from polls.views import APIDocumentationView,
+    RegisterUserView,
+    CustomLoginView,
+    GenerateAPIKeyView,
+    VideoDownloadAPIView,
+    DownloadStatusAPIView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/login/', CustomLoginView.as_view(), name='normal_login'),
-    path('api/v1/keys/generate/', GenerateAPIKeyView.as_view(), name='generate_api_key'),
-    path('api/v1/download/', VideoDownloadAPIView.as_view(), name='api_download_video'),
-    path('download/status/<int:pk>/', DownloadStatusAPIView.as_view()),
     path('api/v1/docs/', APIDocumentationView.as_view(), name='api_docs'),
+    path('api/v1/register/', RegisterUserView.as_view(), name='register'),
+    path('api/v1/login/', CustomLoginView.as_view(), name='login'),
+    path('api/v1/generate-key/', GenerateAPIKeyView.as_view(), name='generate_key'),
+    path('api/v1/download/', VideoDownloadAPIView.as_view(), name='download'),
+    path('api/v1/download/status/<int:pk>/', DownloadStatusAPIView.as_view(), name='download_status'),
 ]
 
 if settings.DEBUG:
