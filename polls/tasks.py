@@ -156,7 +156,7 @@ def safisha_media_files_task():
 """
 import os
 import cloudinary
-import cloudinary.uploader
+from cloudinary import uploader
 from celery import shared_task
 from .models import Test  # Inasoma model yako ya Test kutoka Supabase
 
@@ -187,8 +187,10 @@ def safisha_media_files_task():
             try:
                 # Tunaiambia Cloudinary ifute faili hili lililopo kwenye folder la 'poku_downloads'
                 full_public_id = f"poku_downloads/{public_id}"
-                result = cloudinary.uploader.destroy(full_public_id, resource_type=resource_type)
-                
+                #result = cloudinary.uploader.destroy(full_public_id, resource_type=resource_type)
+                # Badala ya cloudinary.uploader.destroy, weka:
+                result = uploader.destroy(full_public_id, resource_type=resource_type)
+
                 # Cloudinary ikifanikiwa huwa inarudisha {'result': 'ok'}
                 if result.get('result') == 'ok' or result.get('result') == 'not_found':
                     hesabu_ya_cloudinary += 1
@@ -299,7 +301,7 @@ def download_youtube_video_task(instance_id):
 import os
 import subprocess
 import cloudinary
-import cloudinary.uploader
+from cloudinary import uploader 
 from celery import shared_task
 from .models import Test  # Inasoma model yako ya Test inayokwenda Supabase
 
@@ -353,10 +355,10 @@ def download_youtube_video_task(instance_id):
         
         # 3. Washa Bomba la Kutiririsha Data (Subprocess Pipe) kwenye RAM ya Render
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+     # process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  
         # 4. Rusha hiyo Stream moja kwa moja Cloudinary bila kugusa Hard Disk!
         # Tunatumia upload_stream ambayo inapokea maji yanayotiririka kutoka kwenye process.stdout
-        upload_result = cloudinary.uploader.upload_stream(
+        upload_result = uploader.upload_stream(
             process.stdout,
             resource_type=resource_type,
             public_id=f"poku_file_{instance_id}",
