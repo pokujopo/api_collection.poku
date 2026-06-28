@@ -152,7 +152,7 @@ def safisha_media_files_task():
     except Exception as e:
         print(f"Kosa kuu la usafi: {str(e)}")
         return str(e)
-
+"""
 import os
 from celery import shared_task
 import yt_dlp
@@ -230,7 +230,100 @@ def download_youtube_video_task(instance_id):
         except:
             pass
         return f"Kosa: {str(e)}"
+"""
+import os
+import subprocess
+import cloudinary
+import cloudinary.uploader
+from celery import shared_task
+from .models import Test  # Inasoma model yako ya Test inayokwenda Supabase
 
+# Config ya Cloudinary inayosoma kutoka kwenye zile Environment Variables za Render
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+)
+
+@shared_task
+def download_youtube_video_task(instance_id):
+    try:
+        # 1. Vuta data halisi kutoka Supabase DB
+        instance = Test.objects.get(id=instance_id)
+        url_ya_video = instance.link
+        
+        # 2. Maandalizi ya Amri ya yt-dlp (Misingi ya Juu kwa Juu)
+        # Tutaandika amri ya Linux itakayorusha data kwenye RAM badala ya kutengeneza faili (-o -)
+        command = ['yt-dlp', '-o', '-', 'quiet']
+        
+        # --- MAPINDUZI YA FORMAT & QUALITY CONFIGURATION JUU KWA JUU ---
+        if instance.format_type == 'audio':
+            # Mtumiaji anataka sauti pekee (Tunapiga mkwaju wa extract-audio kama stream)
+            command.extend([
+                '-f', 'ba/best',
+                '--extract-audio',
+                '--audio-format', 'mp3',
+                '--audio-quality', '192K'
+            ])
+            resource_type = "raw"  # Sauti safi ya mp3 inayokwenda kama file
+            ext = "mp3"
+        else:
+            # Mtumiaji anataka Video (Chagua Quality)
+            # Kumbuka: Kwenye mfumo wa ku-stream moja kwa moja (-o -), tunachagua format moja bora kabisa
+            # inayojitosheleza (yenye video na audio pamoja) ili isihitaji kuunganishwa (merge) kwenye diski.
+            if instance.quality == '1080p':
+                command.extend(['-f', 'bv*[height<=1080][ext=mp4]+ba[ext=m4a]/best[height<=1080]/best'])
+            elif instance.quality == '720p':
+                command.extend(['-f', 'bv*[height<=720][ext=mp4]+ba[ext=m4a]/best[height<=720]/best'])
+            elif instance.quality == '360p':
+                command.extend(['-f', 'bv*[height<=360][ext=mp4]+ba[ext=m4a]/best[height<=360]/best'])
+            else:
+                command.extend(['-f', 'bv*[ext=mp4]+ba[ext=m4a]/best'])
+                
+            resource_type = "video"
+            ext = "mp4"
+
+        # Ongeza URL ya video mwishoni mwa amri wetu
+        command.append(url_ya_video)
+        
+        # 3. Washa Bomba la Kutiririsha Data (Subprocess Pipe) kwenye RAM ya Render
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # 4. Rusha hiyo Stream moja kwa moja Cloudinary bila kugusa Hard Disk!
+        # Tunatumia upload_stream ambayo inapokea maji yanayotiririka kutoka kwenye process.stdout
+        upload_result = cloudinary.uploader.upload_stream(
+            process.stdout,
+            resource_type=resource_type,
+            public_id=f"poku_file_{instance_id}",
+            folder="poku_downloads"
+        )
+        
+        # Subiri mchakato wa yt-dlp umalizike salama
+        process.wait()
+        
+        # 5. Kazi imekamilika kwa Ushindi: Update Supabase DB
+        instance.status = "Success"
+        
+        # Tunachukua ile URL salama (Secure URL) kutoka Cloudinary
+        link_ya_cloudinary = upload_result.get('secure_url')
+        instance.download_url = link_ya_cloudinary  # Au field uliyoweka kuhifadhi link ya download
+        
+        # Kutengeneza jina la faili la kuonesha kule Frontend
+        instance.name = f"download_{instance_id}.{ext}"
+        instance.save()
+        
+        return f"Download Imekamilika! Aina: {instance.format_type}, Link ya Cloudinary: {link_ya_cloudinary}"
+        
+    except Exception as e:
+        # Usalama kuzuia kifo cha foleni na kusave makosa Supabase
+        try:
+            instance = Test.objects.get(id=instance_id)
+            instance.status = "Failed"
+            instance.error_message = str(e)
+            instance.save()
+        except:
+            pass
+        return f"Kosa: {str(e)}"
         
 """
 import os
