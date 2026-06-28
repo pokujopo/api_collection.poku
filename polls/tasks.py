@@ -1,3 +1,4 @@
+"""
 import os
 from celery import shared_task
 from .models import Test
@@ -41,11 +42,55 @@ def safisha_media_files_task():
     except Exception as e:
         print(f"Kosa kuu la usafi: {str(e)}")
         return str(e)
-
+"""
 import os
 from celery import shared_task
 import yt_dlp
 from .models import Test
+
+
+@shared_task
+def safisha_media_files_task():
+    try:
+        # 1. Tunavuta rekodi zote za "Success" zilizopo Supabase
+        vitu_vya_kufuta = Test.objects.filter(status="Success")
+        
+        hesabu_ya_files = 0
+        hesabu_ya_db_updated = 0
+        
+        for kazi in vitu_vya_kufuta:
+            # Njia halisi ya kwenda kwenye file kwenye diski ya Render (Mfano: media/downloads/video_123.mp4)
+            njia_ya_faili = os.path.join('media', 'downloads', str(kazi.name))
+            
+            # --- HATUA YA A: SAFISHA DISKI YA RENDER ---
+            if os.path.exists(njia_ya_faili):
+                try:
+                    os.remove(njia_ya_faili)
+                    hesabu_ya_files += 1
+                except Exception as file_error:
+                    print(f"Nimeshindwa kufuta file la {kazi.name}: {str(file_error)}")
+                    # Kama file limegoma kufutika, usiguse DB ili ijaribu tena raundi ijayo
+                    continue 
+            
+            # --- HATUA YA B: UPDATE SUPABASE DATABASE (Soft Delete) ---
+            # Badala ya kazi.delete(), tunabadilisha status na kufuta jina la file.
+            # Hii inalinda Download History ya mtumiaji kule Frontend!
+            kazi.status = "Cleaned"
+            kazi.name = None  # Faili halipo tena kwenye diski
+            kazi.save()       # Hii inasafiri mpaka Supabase papo hapo!
+            hesabu_ya_db_updated += 1
+            
+        print(f"=====================================================")
+        print(f"USHAHIDI: Nimefuta Ma-file {hesabu_ya_files} kwenye Storage ya Render")
+        print(f"USHAHIDI: Nimesafisha Rekodi {hesabu_ya_db_updated} kule Supabase DB")
+        print(f"=====================================================")
+        
+        return f"Files Removed: {hesabu_ya_files}, Supabase Rows Updated: {hesabu_ya_db_updated}"
+        
+    except Exception as e:
+        print(f"Kosa kuu la usafi: {str(e)}")
+        return str(e)
+                
 
 @shared_task
 def download_youtube_video_task(instance_id):
