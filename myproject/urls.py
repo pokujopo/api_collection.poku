@@ -15,7 +15,7 @@ urlpatterns = [
 """
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import pa
 from polls.views import CustomLoginView, GenerateAPIKeyView
 from polls.views import VideoDownloadAPIView # <── Import View yetu mpya hapa
 
@@ -33,12 +33,7 @@ urlpatterns = [
 
 from django.contrib import admin
 from django.urls import path
-from polls.views import APIDocumentationView,
-    RegisterUserView,
-    CustomLoginView,
-    GenerateAPIKeyView,
-    VideoDownloadAPIView,
-    DownloadStatusAPIView
+from polls.views import APIDocumentationView, RegisterUserView, CustomLoginView, GenerateAPIKeyView, VideoDownloadAPIView, DownloadStatusAPIView
 from django.conf import settings
 from django.conf.urls.static import static
 
