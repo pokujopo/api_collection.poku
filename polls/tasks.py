@@ -109,6 +109,7 @@ def download_youtube_video_task(instance_id):
             pass
         return f"Kosa kwenye Celery: {str(e)}"
 """      
+"""
 import os
 from celery import shared_task
 from .models import Test
@@ -152,6 +153,70 @@ def safisha_media_files_task():
     except Exception as e:
         print(f"Kosa kuu la usafi: {str(e)}")
         return str(e)
+"""
+import os
+import cloudinary
+import cloudinary.uploader
+from celery import shared_task
+from .models import Test  # Inasoma model yako ya Test kutoka Supabase
+
+# Config ya Cloudinary
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+)
+
+@shared_task
+def safisha_media_files_task():
+    try:
+        # 1. Tunavuta rekodi zote za Success zilizopo Supabase
+        vitu_vya_kufuta = Test.objects.filter(status="Success")
+        
+        hesabu_ya_cloudinary = 0
+        hesabu_ya_db = 0
+        
+        for kazi in vitu_vya_kufuta:
+            # Tunatengeneza lile jina la siri (public_id) tulilolitumia kule kwenye download task
+            public_id = f"poku_file_{kazi.id}"
+            
+            # Tunatambua kama faili lilikuwa ni audio (raw) au video ili Cloudinary ijue jinsi ya kulifuta
+            resource_type = "raw" if kazi.format_type == "audio" else "video"
+            
+            # --- HATUA YA A: PAPASA CLOUDINARY KWANZA ---
+            try:
+                # Tunaiambia Cloudinary ifute faili hili lililopo kwenye folder la 'poku_downloads'
+                full_public_id = f"poku_downloads/{public_id}"
+                result = cloudinary.uploader.destroy(full_public_id, resource_type=resource_type)
+                
+                # Cloudinary ikifanikiwa huwa inarudisha {'result': 'ok'}
+                if result.get('result') == 'ok' or result.get('result') == 'not_found':
+                    hesabu_ya_cloudinary += 1
+                else:
+                    print(f"Cloudinary imekataa kufuta {full_public_id}: {result}")
+                    # Kama Cloudinary imegoma kwa sababu yoyote, usifute rekodi ya DB bado
+                    continue
+                    
+            except Exception as cloudinary_error:
+                print(f"Hitilafu ya mtandao kufuta Cloudinary {public_id}: {str(cloudinary_error)}")
+                continue
+
+            # --- HATUA YA B: SAFISHA DATABASE YA SUPABASE ---
+            # Tunafuta rekodi kwenye DB baada tu ya kujiridhisha kuwa mawinguni kumesafishwa
+            kazi.delete()
+            hesabu_ya_db += 1
+            
+        print(f"=====================================================")
+        print(f"USHAHIDI: Nimefuta Ma-file {hesabu_ya_cloudinary} kule Cloudinary")
+        print(f"USHAHIDI: Nimefuta Rekodi {hesabu_ya_db} kwenye Supabase DB")
+        print(f"=====================================================")
+        
+        return f"Cloudinary: {hesabu_ya_cloudinary}, Supabase DB: {hesabu_ya_db}"
+        
+    except Exception as e:
+        print(f"Kosa kuu la usafi: {str(e)}")
+        return str(e)
+        
 """
 import os
 from celery import shared_task
