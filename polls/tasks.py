@@ -169,6 +169,7 @@ cloudinary.config(
 
 @shared_task
 def safisha_media_files_task():
+    from cloudinary.uploader import destroy
     try:
         # 1. Tunavuta rekodi zote za Success zilizopo Supabase
         vitu_vya_kufuta = Test.objects.filter(status="Success")
@@ -297,7 +298,6 @@ def download_youtube_video_task(instance_id):
         except:
             pass
         return f"Kosa: {str(e)}"
-"""
 import os
 import subprocess
 import cloudinary
@@ -396,7 +396,85 @@ def safisha_media_files_task(public_id):
     # Amri ya kwenda kufuta kule Cloudinary mawinguni kimyakimya
     cloudinary.uploader.destroy(public_id, resource_type="video")
     return f"Video {public_id} imefutwa salama Cloudinary ili kulinda nafasi!"
+"""
+import os
+import subprocess
+import cloudinary
+from celery import shared_task
+from .models import Test
+
+# Config ya Cloudinary kama kawaida
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+)
+
+@shared_task
+def download_youtube_video_task(instance_id):
+    # MAPINDUZI: Import uploader hapa ndani ya function yenyewe!
+    from cloudinary.uploader import upload_stream
     
+    try:
+        instance = Test.objects.get(id=instance_id)
+        url_ya_video = instance.link
+        
+        command = ['yt-dlp', '-o', '-', 'quiet']
+        
+        if instance.format_type == 'audio':
+            command.extend([
+                '-f', 'ba/best',
+                '--extract-audio',
+                '--audio-format', 'mp3',
+                '--audio-quality', '192K'
+            ])
+            resource_type = "raw"
+            ext = "mp3"
+        else:
+            if instance.quality == '1080p':
+                command.extend(['-f', 'bv*[height<=1080][ext=mp4]+ba[ext=m4a]/best[height<=1080]/best'])
+            elif instance.quality == '720p':
+                command.extend(['-f', 'bv*[height<=720][ext=mp4]+ba[ext=m4a]/best[height<=720]/best'])
+            elif instance.quality == '360p':
+                command.extend(['-f', 'bv*[height<=360][ext=mp4]+ba[ext=m4a]/best[height<=360]/best'])
+            else:
+                command.extend(['-f', 'bv*[ext=mp4]+ba[ext=m4a]/best'])
+                
+            resource_type = "video"
+            ext = "mp4"
+
+        command.append(url_ya_video)
+        
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # 🚀 HAPA: Tunatumia sasa ile upload_stream tuliyoivuta moja kwa moja juu
+        upload_result = upload_stream(
+            process.stdout,
+            resource_type=resource_type,
+            public_id=f"poku_file_{instance_id}",
+            folder="poku_downloads"
+        )
+        
+        process.wait()
+        
+        instance.status = "Success"
+        link_ya_cloudinary = upload_result.get('secure_url')
+        instance.download_url = link_ya_cloudinary
+        instance.name = f"download_{instance_id}.{ext}"
+        instance.save()
+        
+        return f"Download Imekamilika! Link ya Cloudinary: {link_ya_cloudinary}"
+        
+    except Exception as e:
+        try:
+            instance = Test.objects.get(id=instance_id)
+            instance.status = "Failed"
+            instance.error_message = str(e)
+            instance.save()
+        except:
+            pass
+        return f"Kosa: {str(e)}"
+            
 """
 import os
 from celery import shared_task
