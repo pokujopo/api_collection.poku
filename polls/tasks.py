@@ -324,7 +324,12 @@ def download_youtube_video_task(instance_id):
         except:
             pass
         return f"Kosa: {str(e)}"
-        
+@shared_task
+def safisha_media_files_task(public_id):
+    # Amri ya kwenda kufuta kule Cloudinary mawinguni kimyakimya
+    cloudinary.uploader.destroy(public_id, resource_type="video")
+    return f"Video {public_id} imefutwa salama Cloudinary ili kulinda nafasi!"
+    
 """
 import os
 from celery import shared_task
