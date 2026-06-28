@@ -190,7 +190,10 @@ def safisha_media_files_task():
                 full_public_id = f"poku_downloads/{public_id}"
                 #result = cloudinary.uploader.destroy(full_public_id, resource_type=resource_type)
                 # Badala ya cloudinary.uploader.destroy, weka:
-                result = uploader.destroy(full_public_id, resource_type=resource_type)
+                #result = uploader.destroy(full_public_id, resource_type=resource_type)
+                # Tumia tu ile ya kawaida tuliyozoea:
+                result = cloudinary.uploader.destroy(full_public_id, resource_type=resource_type)
+
 
                 # Cloudinary ikifanikiwa huwa inarudisha {'result': 'ok'}
                 if result.get('result') == 'ok' or result.get('result') == 'not_found':
@@ -396,7 +399,7 @@ def safisha_media_files_task(public_id):
     # Amri ya kwenda kufuta kule Cloudinary mawinguni kimyakimya
     cloudinary.uploader.destroy(public_id, resource_type="video")
     return f"Video {public_id} imefutwa salama Cloudinary ili kulinda nafasi!"
-"""
+
 import os
 import subprocess
 import cloudinary
@@ -474,7 +477,86 @@ def download_youtube_video_task(instance_id):
         except:
             pass
         return f"Kosa: {str(e)}"
-            
+"""
+import os
+import subprocess
+import cloudinary
+# 1. Tumia import hii ya kawaida kabisa
+import cloudinary.uploader  
+from celery import shared_task
+from .models import Test
+
+# Config ya Cloudinary kama kawaida
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+)
+
+@shared_task
+def download_youtube_video_task(instance_id):
+    try:
+        instance = Test.objects.get(id=instance_id)
+        url_ya_video = instance.link
+        
+        command = ['yt-dlp', '-o', '-', 'quiet']
+        
+        if instance.format_type == 'audio':
+            command.extend([
+                '-f', 'ba/best',
+                '--extract-audio',
+                '--audio-format', 'mp3',
+                '--audio-quality', '192K'
+            ])
+            resource_type = "raw"
+            ext = "mp3"
+        else:
+            if instance.quality == '1080p':
+                command.extend(['-f', 'bv*[height<=1080][ext=mp4]+ba[ext=m4a]/best[height<=1080]/best'])
+            elif instance.quality == '720p':
+                command.extend(['-f', 'bv*[height<=720][ext=mp4]+ba[ext=m4a]/best[height<=720]/best'])
+            elif instance.quality == '360p':
+                command.extend(['-f', 'bv*[height<=360][ext=mp4]+ba[ext=m4a]/best[height<=360]/best'])
+            else:
+                command.extend(['-f', 'bv*[ext=mp4]+ba[ext=m4a]/best'])
+                
+            resource_type = "video"
+            ext = "mp4"
+
+        command.append(url_ya_video)
+        
+        # Fungua bomba la RAM
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # 🚀 MAPINDUZI HAPA: Tunatumia 'cloudinary.uploader.upload' ya kawaida,
+        # lakini tunaipasia 'process.stdout' (bomba la RAM). Hii inakubalika 100% na haileti ImportError!
+        upload_result = cloudinary.uploader.upload(
+            process.stdout,
+            resource_type=resource_type,
+            public_id=f"poku_file_{instance_id}",
+            folder="poku_downloads"
+        )
+        
+        process.wait()
+        
+        instance.status = "Success"
+        link_ya_cloudinary = upload_result.get('secure_url')
+        instance.download_url = link_ya_cloudinary
+        instance.name = f"download_{instance_id}.{ext}"
+        instance.save()
+        
+        return f"Download Imekamilika! Link ya Cloudinary: {link_ya_cloudinary}"
+        
+    except Exception as e:
+        try:
+            instance = Test.objects.get(id=instance_id)
+            instance.status = "Failed"
+            instance.error_message = str(e)
+            instance.save()
+        except:
+            pass
+        return f"Kosa: {str(e)}"
+                
 """
 import os
 from celery import shared_task
