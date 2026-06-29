@@ -19,6 +19,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 # Application definition
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +43,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -98,6 +100,14 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = 'static/'
+# RUHUSA ZA CORS KWA AJILI YA FRONTEND YA VERCEL
+CORS_ALLOWED_ORIGINS = [
+    "https://api-collection-fontend-poku.vercel.app",
+    "https://tend-poku.vercel.app",  # Imeongezwa kutokana na domain ya sasa kwenye picha
+]
+
+# Ukipenda kuruhusu localhost wakati unatecha local:
+CORS_ALLOW_ALL_ORIGINS = False 
 
 # Celery Configuration
 #CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
