@@ -107,8 +107,23 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Ukipenda kuruhusu localhost wakati unatecha local:
-CORS_ALLOW_ALL_ORIGINS = False 
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-api-key",
+]
+CORS_ALLOW_ALL_ORIGINS = True
 
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-API-Key",
+]
 # Celery Configuration
 #CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
 #CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
