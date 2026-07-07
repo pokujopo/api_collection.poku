@@ -1,18 +1,14 @@
-# jina_la_project_yako/celery.py
+# main_project/celery.py
 import os
 from celery import Celery
 
-# Set default Django settings module kwa ajili ya celery
+# Weka settings za Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 
-# Tengeneza instance ya Celery (Upe jina mradi wako)
-app = Celery('myproject')
+app = Celery('kichaka_platform')
 
-# Soma config zote za celery kutoka kwenye settings.py
-# Neno 'CELERY' linamaanisha config zote zianze na neno hilo (mfano: CELERY_BROKER_URL)
+# Kusoma configs zote zenye herufi kubwa kule kwenye settings.py
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# ──── HAPA NDIO MIUJIZA ILIPO ────
-# Hii inamwambia Celery apitie kila app na agundue ma-faili ya 'tasks.py' kiotomatiki!
+# UJANJA NDIO HUU: Inatafuta 'tasks.py' kwenye app zote na ma-folder yote
 app.autodiscover_tasks()
-

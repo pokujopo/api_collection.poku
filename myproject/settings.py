@@ -28,17 +28,30 @@ INSTALLED_APPS = [
     # Maktaba zetu za kazi
     'rest_framework',
     'rest_framework.authtoken', 
-    'rest_framework_api_key',   
+    'rest_framework_api_key',
+    'table'
+    #'main_project',
     
     # App yetu ya kazi
-    'polls', 
+    #'polls', 
 ]
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        # Hapa tunaweka sheria kwa kila plugin kiwanda!
+        'media_downloader': '2/day',  # Mwisho request 2 kwa siku kwa majaribio
+        'ocr_service': '50/day',
+        'qr_service': '100/day',
+    },
 }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -117,8 +130,8 @@ from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
     'endesha-usafi-kila-dakika-10': {
-        'task': 'polls.tasks.safisha_media_files_task',
-        'schedule': 600.0, # Muda wa sekunde (sekunde 600 ni sawa na dakika 10)
+        'task': 'plugins.media_downloader.tasks.safisha_media_files_task',
+        'schedule': 60.0, # Muda wa sekunde (sekunde 600 ni sawa na dakika 10)
         # Kama mbeleni ukitaka itumie saa maalum, unaweza kuweka crontab()
     },
 }
