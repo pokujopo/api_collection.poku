@@ -216,6 +216,5 @@ CELERY_BEAT_SCHEDULE = {
     'endesha-usafi-kila-dakika-10': {
         'task': 'plugins.media_downloader.tasks.safisha_media_files_task',
         'schedule': 60.0, # Muda wa sekunde (sekunde 600 ni sawa na dakika 10)
-        # Kama mbeleni ukitaka itumie saa maalum, unaweza kuweka crontab()
-    },
-}
+        # Kama mbeleni ukitaka itumie saa maalum, unaweza kuweka crontab() 
+}}
